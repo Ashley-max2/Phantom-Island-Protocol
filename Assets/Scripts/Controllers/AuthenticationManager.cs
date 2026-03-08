@@ -75,22 +75,6 @@ namespace Controllers {
             }
         }
 
-        // borra el usuario que esté escrito en el input de username
-        public void OnDeleteUserButton() {
-            string username = usernameInput.text;
-            var users = _userRepo.GetUsers();
-            var target = users.Find(u => u.username == username);
-
-            if (target != null) {
-                _userRepo.DeleteUser(target.id);
-                Debug.Log($"User {username} deleted.");
-                if (errorText != null) errorText.text = $"User {username} deleted.";
-                OnListUsersButton(); // refresca
-            } else {
-                Debug.Log("User not found to delete.");
-            }
-        }
-
         // borra absolutamente todos los usuarios de la base de datos
         public void OnDeleteAllUsersButton() {
             _userRepo.DeleteAllUsers();
