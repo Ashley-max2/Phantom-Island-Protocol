@@ -2,19 +2,33 @@ using UnityEngine;
 using System.Data;
 using Mono.Data.Sqlite;
 using System.IO;
+using SQLite;
 
 namespace Database {
     public class DatabaseManager : MonoBehaviour {
         public static DatabaseManager Instance;
         private string dbName = "URI=file:PhantomIsland.sqlite";
+        private string ormDbPath;
 
         void Awake() {
+            ormDbPath = Path.Combine(Application.dataPath, "../../PhantomIsland.sqlite");
+            // normalize path for different OS if needed, but here we are on windows
+            ormDbPath = Path.GetFullPath(ormDbPath);
+
             if (Instance == null) {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 CreateTables();
+                InitializeORM();
             } else {
                 Destroy(gameObject);
+            }
+        }
+
+        private void InitializeORM() {
+            using (var db = GetORMConnection()) {
+                db.CreateTable<Models.User>();
+                Debug.Log("ORM Tables initialized.");
             }
         }
 
@@ -105,5 +119,10 @@ namespace Database {
         public IDbConnection GetConnection() {
             return new SqliteConnection(dbName);
         }
+
+        public SQLiteConnection GetORMConnection() {
+            return new SQLiteConnection(ormDbPath);
+        }
     }
 }
+

@@ -1,12 +1,18 @@
 using System;
+using SQLite;
 
 namespace Models {
-    [Serializable]
+    [Table("Users")]
     public class User {
-        public int id;
-        public string username;
-        public string password;
-        public bool isFake;
+        [PrimaryKey, AutoIncrement]
+        public int id { get; set; }
+        
+        [Unique]
+        public string username { get; set; }
+        
+        public string password { get; set; }
+        
+        public bool isFake { get; set; }
 
         public User() {}
 

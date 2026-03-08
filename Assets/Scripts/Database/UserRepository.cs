@@ -1,52 +1,44 @@
-using System.Data;
+using System.Collections.Generic;
+using System.Linq;
 using Models;
-using Mono.Data.Sqlite;
+using SQLite;
 using UnityEngine;
 
 namespace Database {
     public class UserRepository {
-        // login normal, busca user y pass en la bd
+        
         public User Login(string username, string password) {
-            using (var conn = DatabaseManager.Instance.GetConnection()) {
-                conn.Open();
-                using (var cmd = conn.CreateCommand()) {
-                    cmd.CommandText = "SELECT id, username, password, isFake FROM Users WHERE username = @u AND password = @p";
-                    
-                    var p1 = cmd.CreateParameter(); p1.ParameterName = "@u"; p1.Value = username; cmd.Parameters.Add(p1);
-                    var p2 = cmd.CreateParameter(); p2.ParameterName = "@p"; p2.Value = password; cmd.Parameters.Add(p2);
-
-                    using (var reader = cmd.ExecuteReader()) {
-                        if (reader.Read()) {
-                           return new User {
-                                id = reader.GetInt32(0),
-                                username = reader.GetString(1),
-                                password = reader.GetString(2),
-                                isFake = reader.GetInt32(3) == 1
-                           };
-                        }
-                    }
-                }
+            using (var db = DatabaseManager.Instance.GetORMConnection()) {
+                return db.Table<User>()
+                         .Where(u => u.username == username && u.password == password)
+                         .FirstOrDefault();
             }
-            return null;
         }
 
-        // crea un user falso para generar llaves
-        public bool CreateFakeUser(string username, string password) {
-            using (var conn = DatabaseManager.Instance.GetConnection()) {
-                conn.Open();
-                using (var cmd = conn.CreateCommand()) {
-                    cmd.CommandText = "INSERT INTO Users (username, password, isFake) VALUES (@u, @p, 1)";
-                    var p1 = cmd.CreateParameter(); p1.ParameterName = "@u"; p1.Value = username; cmd.Parameters.Add(p1);
-                    var p2 = cmd.CreateParameter(); p2.ParameterName = "@p"; p2.Value = password; cmd.Parameters.Add(p2);
+        public List<User> GetUsers() {
+            using (var db = DatabaseManager.Instance.GetORMConnection()) {
+                return db.Table<User>().ToList();
+            }
+        }
 
-                    try {
-                        cmd.ExecuteNonQuery();
-                        return true;
-                    } catch {
-                        return false;
-                    }
-                }
+        public void DeleteAllUsers() {
+            using (var db = DatabaseManager.Instance.GetORMConnection()) {
+                db.DeleteAll<User>();
+                Debug.Log("All users deleted from database.");
+            }
+        }
+
+
+        public bool CreateFakeUser(string username, string password) {
+            using (var db = DatabaseManager.Instance.GetORMConnection()) {
+                var existing = db.Table<User>().Where(u => u.username == username).FirstOrDefault();
+                if (existing != null) return false;
+
+                var newUser = new User(username, password, true);
+                db.Insert(newUser);
+                return true;
             }
         }
     }
 }
+
